@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Outer WiFi Arc -->
+    <path
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M 32,40 C 44,28 64,28 76,40">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="32"
+                android:startY="34"
+                android:endX="76"
+                android:endY="34"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#00F2FE" />
+                <item android:offset="1.0" android:color="#4FACFE" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Mid WiFi Arc -->
+    <path
+        android:strokeWidth="4.5"
+        android:strokeLineCap="round"
+        android:pathData="M 39,49 C 47,40 61,40 69,49">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="39"
+                android:startY="45"
+                android:endX="69"
+                android:endY="45"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#38EF7D" />
+                <item android:offset="1.0" android:color="#11998E" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Inner WiFi Arc -->
+    <path
+        android:strokeWidth="4.0"
+        android:strokeLineCap="round"
+        android:pathData="M 46,58 C 50,53 58,53 62,58">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="46"
+                android:startY="55"
+                android:endX="62"
+                android:endY="55"
+                android:type="linear">
+                <item android:offset="0.0" android:color="#4FACFE" />
+                <item android:offset="1.0" android:color="#00F2FE" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- Center Hotspot Hub Dot -->
+    <path
+        android:fillColor="#00F2FE"
+        android:pathData="M 54,64 A 4,4 0 1 1 54,72 A 4,4 0 1 1 54,64 Z" />
+
+    <!-- Connected Client Nodes (Network Tracker) -->
+    <!-- Node Left -->
+    <path
+        android:strokeColor="#4A6572"
+        android:strokeWidth="1.5"
+        android:pathData="M 54,68 L 36,78" />
+    <path
+        android:fillColor="#38EF7D"
+        android:pathData="M 36,75 A 3.5,3.5 0 1 1 36,82 A 3.5,3.5 0 1 1 36,75 Z" />
+
+    <!-- Node Center Bottom -->
+    <path
+        android:strokeColor="#4A6572"
+        android:strokeWidth="1.5"
+        android:pathData="M 54,68 L 54,82" />
+    <path
+        android:fillColor="#00F2FE"
+        android:pathData="M 54,79 A 3.5,3.5 0 1 1 54,86 A 3.5,3.5 0 1 1 54,79 Z" />
+
+    <!-- Node Right -->
+    <path
+        android:strokeColor="#4A6572"
+        android:strokeWidth="1.5"
+        android:pathData="M 54,68 L 72,78" />
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M 72,75 A 3.5,3.5 0 1 1 72,82 A 3.5,3.5 0 1 1 72,75 Z" />
+
+</vector>

@@ -1,0 +1,6 @@
+{
+  "name": "WiFiPulse",
+  "description": "WiFi Analyzer and Hotspot Data Usage Tracker with spectrum channel graphs, real-time client bandwidth tracking, and data usage analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
