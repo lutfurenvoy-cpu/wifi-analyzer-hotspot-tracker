@@ -120,6 +120,22 @@ data class DailyUsageSummary(
     val uploadBytes: Long
 )
 
+data class UsageTrendPoint(
+    val label: String,
+    val fullDate: String,
+    val downloadBytes: Long,
+    val uploadBytes: Long
+) {
+    val totalBytes: Long
+        get() = downloadBytes + uploadBytes
+}
+
+enum class AnalyticsTimeframe(val label: String) {
+    DAILY("Daily (7 Days)"),
+    WEEKLY("Weekly (4 Weeks)"),
+    HOURLY("Hourly (24 Hours)")
+}
+
 data class ChannelRating(
     val channel: Int,
     val band: WifiBand,
@@ -154,3 +170,40 @@ sealed class WifiScanState {
     ) : WifiScanState()
     data class Error(val message: String) : WifiScanState()
 }
+
+enum class SpeedTestStage(val label: String) {
+    IDLE("Ready"),
+    PING("Testing Latency..."),
+    DOWNLOAD("Testing Download..."),
+    UPLOAD("Testing Upload..."),
+    COMPLETE("Test Completed"),
+    ERROR("Test Interrupted")
+}
+
+data class SpeedTestState(
+    val stage: SpeedTestStage = SpeedTestStage.IDLE,
+    val currentSpeedMbps: Double = 0.0,
+    val downloadSpeedMbps: Double = 0.0,
+    val uploadSpeedMbps: Double = 0.0,
+    val pingMs: Double = 0.0,
+    val jitterMs: Double = 0.0,
+    val progress: Float = 0f, // overall 0.0 to 1.0
+    val stageProgress: Float = 0f, // 0.0 to 1.0 for current phase
+    val graphPoints: List<Float> = emptyList(),
+    val serverName: String = "Fast CDN Server (Auto)",
+    val errorMessage: String? = null
+) {
+    val isRunning: Boolean
+        get() = stage == SpeedTestStage.PING || stage == SpeedTestStage.DOWNLOAD || stage == SpeedTestStage.UPLOAD
+}
+
+data class SpeedTestResult(
+    val id: Long = 0,
+    val timestamp: Long = System.currentTimeMillis(),
+    val downloadMbps: Double,
+    val uploadMbps: Double,
+    val pingMs: Double,
+    val jitterMs: Double,
+    val wifiSsid: String,
+    val serverName: String = "Global CDN Edge"
+)

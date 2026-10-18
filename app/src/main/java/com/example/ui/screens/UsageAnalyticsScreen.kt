@@ -50,6 +50,7 @@ import com.example.data.model.ConnectedClient
 import com.example.ui.components.ClientDataPieChart
 import com.example.ui.components.DailyUsageBarChart
 import com.example.ui.components.LiveSpeedChart
+import com.example.ui.components.RechartsTrendView
 import com.example.ui.theme.AmberTertiary
 import com.example.ui.theme.CyanPrimary
 import com.example.ui.theme.EmeraldSecondary
@@ -66,6 +67,9 @@ fun UsageAnalyticsScreen(
     val clients by viewModel.connectedClients.collectAsState()
     val speedHistory by viewModel.speedHistory.collectAsState()
     val dailySummaries by viewModel.dailyUsageHistory.collectAsState()
+    val dailyTrendPoints by viewModel.dailyTrendPoints.collectAsState()
+    val weeklyTrendPoints by viewModel.weeklyTrendPoints.collectAsState()
+    val hourlyTrendPoints by viewModel.hourlyTrendPoints.collectAsState()
 
     var showResetDialog by remember { mutableStateOf(false) }
 

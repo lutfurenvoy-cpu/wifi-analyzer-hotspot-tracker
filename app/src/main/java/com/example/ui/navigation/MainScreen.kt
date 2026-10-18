@@ -37,6 +37,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +45,7 @@ import com.example.ui.screens.AnalyzerScreen
 import com.example.ui.screens.ChannelSpectrumScreen
 import com.example.ui.screens.HotspotTrackerScreen
 import com.example.ui.screens.NetworkToolsScreen
+import com.example.ui.screens.SpeedMeterScreen
 import com.example.ui.screens.UsageAnalyticsScreen
 import com.example.ui.theme.CyanPrimary
 import com.example.ui.viewmodel.MainViewModel
@@ -54,6 +56,7 @@ enum class NavigationDestination(
     val testTag: String
 ) {
     ANALYZER("Analyzer", Icons.Default.Wifi, "nav_item_analyzer"),
+    SPEED("Speed", Icons.Default.Speed, "nav_item_speed"),
     SPECTRUM("Spectrum", Icons.Default.ShowChart, "nav_item_spectrum"),
     HOTSPOT("Hotspot", Icons.Default.WifiTethering, "nav_item_hotspot"),
     ANALYTICS("Analytics", Icons.Default.Insights, "nav_item_analytics"),
@@ -143,6 +146,7 @@ fun MainScreen(
             ) { dest ->
                 when (dest) {
                     NavigationDestination.ANALYZER -> AnalyzerScreen(viewModel = viewModel)
+                    NavigationDestination.SPEED -> SpeedMeterScreen(viewModel = viewModel)
                     NavigationDestination.SPECTRUM -> ChannelSpectrumScreen(viewModel = viewModel)
                     NavigationDestination.HOTSPOT -> HotspotTrackerScreen(viewModel = viewModel)
                     NavigationDestination.ANALYTICS -> UsageAnalyticsScreen(viewModel = viewModel)

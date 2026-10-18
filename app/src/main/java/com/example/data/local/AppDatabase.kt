@@ -63,14 +63,42 @@ data class TotalUsageTuple(
     val totalUp: Long?
 )
 
+@Entity(tableName = "speed_test_history")
+data class SpeedTestRecordEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val timestamp: Long,
+    val downloadMbps: Double,
+    val uploadMbps: Double,
+    val pingMs: Double,
+    val jitterMs: Double,
+    val wifiSsid: String,
+    val serverName: String
+)
+
+@Dao
+interface SpeedTestRecordDao {
+    @Query("SELECT * FROM speed_test_history ORDER BY timestamp DESC LIMIT 100")
+    fun getAllHistory(): Flow<List<SpeedTestRecordEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(record: SpeedTestRecordEntity): Long
+
+    @Query("DELETE FROM speed_test_history WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("DELETE FROM speed_test_history")
+    suspend fun clearAll()
+}
+
 @Database(
-    entities = [ClientSettingEntity::class, UsageHistoryEntity::class],
-    version = 1,
+    entities = [ClientSettingEntity::class, UsageHistoryEntity::class, SpeedTestRecordEntity::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun clientSettingDao(): ClientSettingDao
     abstract fun usageHistoryDao(): UsageHistoryDao
+    abstract fun speedTestRecordDao(): SpeedTestRecordDao
 
     companion object {
         @Volatile

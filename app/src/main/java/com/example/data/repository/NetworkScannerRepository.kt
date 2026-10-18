@@ -10,6 +10,7 @@ import android.net.wifi.WifiManager
 import android.os.Build
 import com.example.data.local.AppDatabase
 import com.example.data.local.ClientSettingEntity
+import com.example.data.local.SpeedTestRecordEntity
 import com.example.data.local.UsageHistoryEntity
 import com.example.data.model.ChannelRating
 import com.example.data.model.ConnectedClient
@@ -19,12 +20,16 @@ import com.example.data.model.DeviceType
 import com.example.data.model.HotspotTelemetry
 import com.example.data.model.PingResult
 import com.example.data.model.SpeedDataPoint
+import com.example.data.model.SpeedTestResult
+import com.example.data.model.SpeedTestState
 import com.example.data.model.SubnetHost
+import com.example.data.model.UsageTrendPoint
 import com.example.data.model.WifiBand
 import com.example.data.model.WifiNetworkInfo
 import com.example.data.model.WifiScanState
 import com.example.service.WifiScanningService
 import com.example.util.NetworkUtils
+import com.example.util.SpeedTestEngine
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -50,6 +55,10 @@ class NetworkScannerRepository(
     private val wifiManager = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
     private val connectivityManager = context.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
     private val database = AppDatabase.getInstance(context)
+    private val speedTestEngine = SpeedTestEngine(context)
+
+    val speedTestState: StateFlow<SpeedTestState> = speedTestEngine.state
+    val speedTestHistory = database.speedTestRecordDao().getAllHistory()
 
     private val _currentConnection = MutableStateFlow(CurrentWifiConnection())
     val currentConnection: StateFlow<CurrentWifiConnection> = _currentConnection.asStateFlow()
@@ -78,6 +87,15 @@ class NetworkScannerRepository(
     private val _dailyUsageHistory = MutableStateFlow<List<DailyUsageSummary>>(emptyList())
     val dailyUsageHistory: StateFlow<List<DailyUsageSummary>> = _dailyUsageHistory.asStateFlow()
 
+    private val _dailyTrendPoints = MutableStateFlow<List<UsageTrendPoint>>(emptyList())
+    val dailyTrendPoints: StateFlow<List<UsageTrendPoint>> = _dailyTrendPoints.asStateFlow()
+
+    private val _weeklyTrendPoints = MutableStateFlow<List<UsageTrendPoint>>(emptyList())
+    val weeklyTrendPoints: StateFlow<List<UsageTrendPoint>> = _weeklyTrendPoints.asStateFlow()
+
+    private val _hourlyTrendPoints = MutableStateFlow<List<UsageTrendPoint>>(emptyList())
+    val hourlyTrendPoints: StateFlow<List<UsageTrendPoint>> = _hourlyTrendPoints.asStateFlow()
+
     private var previousRxBytes = TrafficStats.getTotalRxBytes()
     private var previousTxBytes = TrafficStats.getTotalTxBytes()
     private var lastSpeedCheckTimestamp = System.currentTimeMillis()
@@ -92,11 +110,33 @@ class NetworkScannerRepository(
 
     private fun initInitialUsageHistory() {
         val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Today")
-        val baseDown = listOf(1_450_000_000L, 2_100_000_000L, 890_000_000L, 3_400_000_000L, 1_850_000_000L, 4_100_000_000L, 1_650_000_000L)
-        val baseUp = listOf(350_000_000L, 510_000_000L, 210_000_000L, 720_000_000L, 430_000_000L, 950_000_000L, 390_000_000L)
+        val fullDates = listOf("Oct 12", "Oct 13", "Oct 14", "Oct 15", "Oct 16", "Oct 17", "Oct 18")
+        val baseDown = listOf(1_450_000_000L, 2_100_000_000L, 890_000_000L, 3_400_000_000L, 1_850_000_000L, 4_100_000_000L, 2_450_000_000L)
+        val baseUp = listOf(350_000_000L, 510_000_000L, 210_000_000L, 720_000_000L, 430_000_000L, 950_000_000L, 580_000_000L)
+
         _dailyUsageHistory.value = days.mapIndexed { index, name ->
             DailyUsageSummary(name, baseDown[index], baseUp[index])
         }
+
+        _dailyTrendPoints.value = days.mapIndexed { index, name ->
+            UsageTrendPoint(name, fullDates[index], baseDown[index], baseUp[index])
+        }
+
+        _weeklyTrendPoints.value = listOf(
+            UsageTrendPoint("Wk 38", "Sep 20 - Sep 26", 12_400_000_000L, 2_800_000_000L),
+            UsageTrendPoint("Wk 39", "Sep 27 - Oct 03", 15_800_000_000L, 3_400_000_000L),
+            UsageTrendPoint("Wk 40", "Oct 04 - Oct 10", 18_200_000_000L, 4_100_000_000L),
+            UsageTrendPoint("Wk 41", "Oct 11 - Oct 18", 16_500_000_000L, 3_800_000_000L)
+        )
+
+        _hourlyTrendPoints.value = listOf(
+            UsageTrendPoint("00h", "00:00 - 04:00", 280_000_000L, 45_000_000L),
+            UsageTrendPoint("04h", "04:00 - 08:00", 120_000_000L, 20_000_000L),
+            UsageTrendPoint("08h", "08:00 - 12:00", 850_000_000L, 190_000_000L),
+            UsageTrendPoint("12h", "12:00 - 16:00", 1_420_000_000L, 310_000_000L),
+            UsageTrendPoint("16h", "16:00 - 20:00", 1_890_000_000L, 420_000_000L),
+            UsageTrendPoint("20h", "20:00 - 24:00", 940_000_000L, 180_000_000L)
+        )
     }
 
     private fun startLiveMonitoring() {
@@ -706,5 +746,36 @@ class NetworkScannerRepository(
             latencyMs = 1
         ))
         results
+    }
+
+    suspend fun runSpeedTest(ssid: String) {
+        speedTestEngine.runSpeedTest(ssid) { result ->
+            val entity = SpeedTestRecordEntity(
+                timestamp = result.timestamp,
+                downloadMbps = result.downloadMbps,
+                uploadMbps = result.uploadMbps,
+                pingMs = result.pingMs,
+                jitterMs = result.jitterMs,
+                wifiSsid = result.wifiSsid,
+                serverName = result.serverName
+            )
+            database.speedTestRecordDao().insert(entity)
+        }
+    }
+
+    fun cancelSpeedTest() {
+        speedTestEngine.cancelTest()
+    }
+
+    fun resetSpeedTestState() {
+        speedTestEngine.resetState()
+    }
+
+    suspend fun deleteSpeedTestRecord(id: Long) {
+        database.speedTestRecordDao().deleteById(id)
+    }
+
+    suspend fun clearSpeedTestHistory() {
+        database.speedTestRecordDao().clearAll()
     }
 }

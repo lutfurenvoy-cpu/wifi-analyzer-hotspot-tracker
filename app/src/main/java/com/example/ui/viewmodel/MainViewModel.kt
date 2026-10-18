@@ -3,6 +3,7 @@ package com.example.ui.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.data.local.SpeedTestRecordEntity
 import com.example.data.model.ChannelRating
 import com.example.data.model.ConnectedClient
 import com.example.data.model.CurrentWifiConnection
@@ -11,7 +12,9 @@ import com.example.data.model.DeviceType
 import com.example.data.model.HotspotTelemetry
 import com.example.data.model.PingResult
 import com.example.data.model.SpeedDataPoint
+import com.example.data.model.SpeedTestState
 import com.example.data.model.SubnetHost
+import com.example.data.model.UsageTrendPoint
 import com.example.data.model.WifiBand
 import com.example.data.model.WifiNetworkInfo
 import com.example.data.model.WifiScanState
@@ -42,6 +45,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val connectedClients: StateFlow<List<ConnectedClient>> = repository.connectedClients
     val speedHistory: StateFlow<List<SpeedDataPoint>> = repository.speedHistory
     val dailyUsageHistory: StateFlow<List<DailyUsageSummary>> = repository.dailyUsageHistory
+    val dailyTrendPoints: StateFlow<List<UsageTrendPoint>> = repository.dailyTrendPoints
+    val weeklyTrendPoints: StateFlow<List<UsageTrendPoint>> = repository.weeklyTrendPoints
+    val hourlyTrendPoints: StateFlow<List<UsageTrendPoint>> = repository.hourlyTrendPoints
+    val speedTestState: StateFlow<SpeedTestState> = repository.speedTestState
+    val speedTestHistory: StateFlow<List<SpeedTestRecordEntity>> = repository.speedTestHistory
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Filter and Sort states for WiFi Scanner
     private val _selectedBandFilter = MutableStateFlow<WifiBand?>(null) // null = ALL
@@ -181,6 +190,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _isScanningClients.value = true
             repository.scanAndDiscoverClients()
             _isScanningClients.value = false
+        }
+    }
+
+    fun startSpeedTest(wifiSsid: String? = null) {
+        viewModelScope.launch {
+            val ssid = wifiSsid ?: currentConnection.value.ssid
+            repository.runSpeedTest(ssid)
+        }
+    }
+
+    fun cancelSpeedTest() {
+        repository.cancelSpeedTest()
+    }
+
+    fun resetSpeedTest() {
+        repository.resetSpeedTestState()
+    }
+
+    fun deleteSpeedTestRecord(id: Long) {
+        viewModelScope.launch {
+            repository.deleteSpeedTestRecord(id)
+        }
+    }
+
+    fun clearSpeedTestHistory() {
+        viewModelScope.launch {
+            repository.clearSpeedTestHistory()
         }
     }
 }

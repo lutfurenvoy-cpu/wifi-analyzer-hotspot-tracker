@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hotspot Recharts Trends</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #090E17;
+      color: #F1F5F9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+    .chart-container {
+      width: 100%;
+      height: 240px;
+      position: relative;
+    }
+    .custom-tooltip {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      font-size: 12px;
+    }
+    .tooltip-title {
+      font-weight: bold;
+      color: #F8FAFC;
+      margin-bottom: 6px;
+    }
+    .tooltip-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 6px;
+    }
+    .dot-dl { background-color: #00D2FF; }
+    .dot-ul { background-color: #10B981; }
+    .dot-total { background-color: #A855F7; }
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 11px;
+      color: #94A3B8;
+    }
+    .recharts-default-legend {
+      display: flex !important;
+      justify-content: center !important;
+      gap: 16px;
+      font-size: 12px;
+      padding-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="stats-header">
+    <span id="trend-period">Hotspot Data Consumption</span>
+    <span id="trend-total" style="color: #00D2FF; font-weight: bold;">Loading...</span>
+  </div>
+  <div id="chart-root" class="chart-container"></div>
+
+  <script>
+    const { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } = window.Recharts || {};
+
+    let currentData = [
+      { name: 'Mon', download: 1.45, upload: 0.35, total: 1.80 },
+      { name: 'Tue', download: 2.10, upload: 0.51, total: 2.61 },
+      { name: 'Wed', download: 0.89, upload: 0.21, total: 1.10 },
+      { name: 'Thu', download: 3.40, upload: 0.72, total: 4.12 },
+      { name: 'Fri', download: 1.85, upload: 0.43, total: 2.28 },
+      { name: 'Sat', download: 4.10, upload: 0.95, total: 5.05 },
+      { name: 'Today', download: 2.45, upload: 0.58, total: 3.03 }
+    ];
+
+    let chartType = 'area'; // 'area' or 'bar'
+
+    function formatGB(val) {
+      return val >= 1 ? val.toFixed(1) + ' GB' : (val * 1024).toFixed(0) + ' MB';
+    }
+
+    const CustomTooltip = ({ active, payload, label }) => {
+      if (active && payload && payload.length) {
+        const dl = payload.find(p => p.dataKey === 'download')?.value || 0;
+        const ul = payload.find(p => p.dataKey === 'upload')?.value || 0;
+        const tot = dl + ul;
+        return React.createElement('div', { className: 'custom-tooltip' },
+          React.createElement('div', { className: 'tooltip-title' }, label),
+          React.createElement('div', { className: 'tooltip-row' },
+            React.createElement('span', { className: 'dot dot-dl' }),
+            React.createElement('span', null, 'Download: ' + formatGB(dl))
+          ),
+          React.createElement('div', { className: 'tooltip-row' },
+            React.createElement('span', { className: 'dot dot-ul' }),
+            React.createElement('span', null, 'Upload: ' + formatGB(ul))
+          ),
+          React.createElement('div', { className: 'tooltip-row', style: { borderTop: '1px solid #334155', paddingTop: '4px', marginTop: '4px' } },
+            React.createElement('span', { className: 'dot dot-total' }),
+            React.createElement('strong', null, 'Total: ' + formatGB(tot))
+          )
+        );
+      }
+      return null;
+    };
+
+    function renderRecharts() {
+      if (!window.Recharts) {
+        document.getElementById('chart-root').innerHTML = '<div style="color: #64748B; text-align: center; padding-top: 60px;">Visualizing trends...</div>';
+        return;
+      }
+
+      const totalSum = currentData.reduce((acc, d) => acc + (d.download || 0) + (d.upload || 0), 0);
+      document.getElementById('trend-total').innerText = 'Total: ' + formatGB(totalSum);
+
+      let chartElement;
+      if (chartType === 'bar') {
+        chartElement = React.createElement(BarChart, { data: currentData, margin: { top: 10, right: 10, left: -20, bottom: 0 } },
+          React.createElement(CartesianGrid, { strokeDasharray: '3 3', stroke: '#1E293B', vertical: false }),
+          React.createElement(XAxis, { dataKey: 'name', stroke: '#94A3B8', fontSize: 11, tickLine: false }),
+          React.createElement(YAxis, { stroke: '#94A3B8', fontSize: 10, tickLine: false, tickFormatter: v => v + 'G' }),
+          React.createElement(Tooltip, { content: React.createElement(CustomTooltip) }),
+          React.createElement(Legend, { iconType: 'circle' }),
+          React.createElement(Bar, { dataKey: 'download', name: 'Download', fill: '#00D2FF', radius: [4, 4, 0, 0] }),
+          React.createElement(Bar, { dataKey: 'upload', name: 'Upload', fill: '#10B981', radius: [4, 4, 0, 0] })
+        );
+      } else {
+        chartElement = React.createElement(AreaChart, { data: currentData, margin: { top: 10, right: 10, left: -20, bottom: 0 } },
+          React.createElement('defs', null,
+            React.createElement('linearGradient', { id: 'gradDl', x1: '0', y1: '0', x2: '0', y2: '1' },
+              React.createElement('stop', { offset: '5%', stopColor: '#00D2FF', stopOpacity: 0.8 }),
+              React.createElement('stop', { offset: '95%', stopColor: '#00D2FF', stopOpacity: 0.0 })
+            ),
+            React.createElement('linearGradient', { id: 'gradUl', x1: '0', y1: '0', x2: '0', y2: '1' },
+              React.createElement('stop', { offset: '5%', stopColor: '#10B981', stopOpacity: 0.7 }),
+              React.createElement('stop', { offset: '95%', stopColor: '#10B981', stopOpacity: 0.0 })
+            )
+          ),
+          React.createElement(CartesianGrid, { strokeDasharray: '3 3', stroke: '#1E293B', vertical: false }),
+          React.createElement(XAxis, { dataKey: 'name', stroke: '#94A3B8', fontSize: 11, tickLine: false }),
+          React.createElement(YAxis, { stroke: '#94A3B8', fontSize: 10, tickLine: false, tickFormatter: v => v + 'G' }),
+          React.createElement(Tooltip, { content: React.createElement(CustomTooltip) }),
+          React.createElement(Legend, { iconType: 'circle' }),
+          React.createElement(Area, { type: 'monotone', dataKey: 'download', name: 'Download', stroke: '#00D2FF', strokeWidth: 2, fillOpacity: 1, fill: 'url(#gradDl)' }),
+          React.createElement(Area, { type: 'monotone', dataKey: 'upload', name: 'Upload', stroke: '#10B981', strokeWidth: 2, fillOpacity: 1, fill: 'url(#gradUl)' })
+        );
+      }
+
+      const App = React.createElement(ResponsiveContainer, { width: '100%', height: 230 }, chartElement);
+      ReactDOM.render(App, document.getElementById('chart-root'));
+    }
+
+    // Window bridge functions called from Android
+    window.updateRechartsData = function(jsonDataStr, type, periodTitle) {
+      try {
+        currentData = JSON.parse(jsonDataStr);
+        if (type) chartType = type;
+        if (periodTitle) document.getElementById('trend-period').innerText = periodTitle;
+        renderRecharts();
+      } catch (e) {
+        console.error("Failed to parse data for Recharts", e);
+      }
+    };
+
+    window.onload = function() {
+      renderRecharts();
+    };
+  </script>
+</body>
+</html>
